@@ -4,6 +4,12 @@ from scipy.linalg import norm
 H_matrix = 1/np.sqrt(2) * np.array([[1, 1],
                                     [1, -1]])
 
+X_matrix = np.array([[0, 1], 
+                     [1, 0]])
+
+Z_matrix = np.array([[1, 0],
+                     [0, -1]])
+
 S_matrix = np.array([[1, 0],
                     [0, 0+ 1j]])
 
