@@ -13,16 +13,22 @@ Z_matrix = np.array([[1, 0],
 S_matrix = np.array([[1, 0],
                     [0, 0+ 1j]])
 
-#print(S_matrix.imag)
-
-CNOT_matrix = np.array([[1,0,0,0],
+CX_matrix = np.array([[1,0,0,0],
                         [0,1,0,0],
                         [0,0,0,1],
                         [0,0,1,0]])
+
+CZ_matrix = np.array([[1,0,0,0],
+                      [0,1,0,0],
+                      [0,0,1,0],
+                      [0,0,0,-1]])
                     
 
-CNOT_tensor = np.reshape(CNOT_matrix, (2,2,2,2))
+CX_tensor = np.reshape(CX_matrix, (2,2,2,2))
 
+CZ_tensor = np.reshape(CZ_matrix, (2,2,2,2))
+
+                    
 class Reg:
     def __init__(self, n):
         self.n = n
