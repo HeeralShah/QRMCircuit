@@ -44,10 +44,12 @@ class Reg:
     
     def CX_op(self, control, target):
         self.psi = np.tensordot(CX_tensor, self.psi, ((2, 3), (control, target)))
+        self.psi = np.moveaxis(self.psi, (0,1), (control, target))
         return self
     
     def CZ_op(self, control, target):
         self.psi = np.tensordot(CZ_tensor, self.psi, ((2, 3), (control, target)))
+        self.psi = np.moveaxis(self.psi, (0,1), (control, target))
         return self
 
     def transversal(self, operator):
@@ -64,7 +66,7 @@ class Reg:
 
 
 
-##########TESTING#########################################
+##################################TESTING#########################################
 
 reg = Reg(4)
 #print(reg.psi)
@@ -79,18 +81,10 @@ reset_reg = final_reg.reg_reset()
 
 print(reset_reg.psi)
 
+reg2 = Reg(3)
+reg2 = reg2.one_qubit_op(X_matrix, 2)
+print(reg2.psi)
 
-
-
-
-
-
-
-#main_circ = np.zeros((2,2,2))
-
-#print (main_circ)
-#print(main_circ.size)
-
-
-
-#print(CNOT_tensor)
+reg2.CX_op(2, 0)
+reg2.CZ_op(0, 2)
+print(reg2.psi)
