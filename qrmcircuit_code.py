@@ -14,9 +14,9 @@ S_matrix = np.array([[1, 0],
                     [0, 0+ 1j]])
 
 CX_matrix = np.array([[1,0,0,0],
-                        [0,1,0,0],
-                        [0,0,0,1],
-                        [0,0,1,0]])
+                      [0,1,0,0],
+                      [0,0,0,1],
+                      [0,0,1,0]])
 
 CZ_matrix = np.array([[1,0,0,0],
                       [0,1,0,0],
@@ -34,17 +34,27 @@ class Reg:
         self.n = n
         self.psi = np.zeros((2,) *n )
         self.psi[(0,) *n ] = 1
-
-    def H(self, i):
-        self.psi = np.tensordot(H_matrix, self.psi, (1, i))
+    
+    def one_qubit_op(self, operator, i):
+        self.psi = np.tensordot(operator, self.psi, (1, i))
         self.psi = np.moveaxis(self.psi, 0, i)
         return self
 
+    def transversal(self, operator):
+        i=0
+        while i < self.n:
+            self.one_qubit_op(operator, i)
+            i+=1
+        return self
+
+
 
 reg = Reg(4)
-print(reg.psi)
+#print(reg.psi)
 
-final_reg = reg.H(0)
+#final_reg = reg.transversal(reg.H)
+med_reg = reg.transversal(H_matrix)
+final_reg = reg.transversal(S_matrix)
 
 print(final_reg.psi)
 
