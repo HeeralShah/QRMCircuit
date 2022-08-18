@@ -1,3 +1,4 @@
+from http.client import PRECONDITION_FAILED
 import numpy as np
 from scipy.linalg import norm
 
@@ -30,6 +31,7 @@ CZ_tensor = np.reshape(CZ_matrix, (2,2,2,2))
 
                     
 class Reg:
+
     def __init__(self, n):
         self.n = n
         self.psi = np.zeros((2,) *n )
@@ -39,6 +41,14 @@ class Reg:
         self.psi = np.tensordot(operator, self.psi, (1, i))
         self.psi = np.moveaxis(self.psi, 0, i)
         return self
+    
+    def CX_op(self, control, target):
+        self.psi = np.tensordot(CX_tensor, self.psi, ((2, 3), (control, target)))
+        return self
+    
+    def CZ_op(self, control, target):
+        self.psi = np.tensordot(CZ_tensor, self.psi, ((2, 3), (control, target)))
+        return self
 
     def transversal(self, operator):
         i=0
@@ -46,8 +56,15 @@ class Reg:
             self.one_qubit_op(operator, i)
             i+=1
         return self
+    
+    def reg_reset(self):
+        self.psi = np.zeros((2,) *self.n )
+        self.psi[(0,) *self.n ] = 1
+        return self
 
 
+
+##########TESTING#########################################
 
 reg = Reg(4)
 #print(reg.psi)
@@ -57,6 +74,10 @@ med_reg = reg.transversal(H_matrix)
 final_reg = reg.transversal(S_matrix)
 
 print(final_reg.psi)
+
+reset_reg = final_reg.reg_reset()
+
+print(reset_reg.psi)
 
 
 
