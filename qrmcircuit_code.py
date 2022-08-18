@@ -35,6 +35,22 @@ class Reg:
         self.psi = np.zeros((2,) *n )
         self.psi[(0,) *n ] = 1
 
+    def H(self, i):
+        self.psi = np.tensordot(H_matrix, self.psi, (1, i))
+        self.psi = np.moveaxis(self.psi, 0, i)
+        return self
+
+
+reg = Reg(4)
+print(reg.psi)
+
+final_reg = reg.H(0)
+
+print(final_reg.psi)
+
+
+
+
 
 
 
