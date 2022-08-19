@@ -29,6 +29,9 @@ CX_tensor = np.reshape(CX_matrix, (2,2,2,2))
 
 CZ_tensor = np.reshape(CZ_matrix, (2,2,2,2))
 
+
+projectors=[np.array([[1,0],[0,0]]), np.array([[0,0],[0,1]]) ] # list containing the projectors |0><0| and |1><1|
+
                     
 class Reg:
 
@@ -64,9 +67,18 @@ class Reg:
         self.psi[(0,) *self.n ] = 1
         return self
 
+    def project(self, i, j): # RETURN state with ith qubit of reg projected onto |j>
+        self.psi = np.moveaxis(np.tensordot(projectors[j], self.psi, (1, i)), 0, i)
+        return self
+    
 
 
-##################################TESTING#########################################
+
+
+
+
+
+##################################  TESTING   #########################################
 
 reg = Reg(4)
 #print(reg.psi)
