@@ -6,8 +6,6 @@ from scipy.linalg import norm
 class Reg:
 
 
-    
-
     def __init__(self, n):
 
 
@@ -18,12 +16,12 @@ class Reg:
     
         self._one_qubit_gates = {'H_matrix' : 1/np.sqrt(2) * np.array([[1, 1],
                                                                       [1, -1]]),
-                              'X_matrix;': np.array([[0, 1], 
-                                                    [1, 0]]),
-                              'Z_matrix' : np.array([[1, 0], 
-                                                     [0, -1]]),
-                              'S_matrix' : np.array([[1, 0],
-                                                     [0, 0+ 1j]])}
+                                 'X_matrix': np.array([[0, 1], 
+                                                        [1, 0]]),
+                                 'Z_matrix' : np.array([[1, 0], 
+                                                        [0, -1]]),
+                                 'S_matrix' : np.array([[1, 0],
+                                                        [0, 0+ 1j]])}
 
         self._CX_matrix = np.array([[1,0,0,0],
                           [0,1,0,0],
@@ -48,12 +46,22 @@ class Reg:
         self.psi = np.tensordot(self._CX_tensor, self.psi, ((2, 3), (control, target)))
         self.psi = np.moveaxis(self.psi, (0,1), (control, target))
         return self
+
+    
+    def CX_multiqubit(self, control, target_arr):
+        for i in target_arr:
+            self.CX_op(control, i)
+        return self
     
     def CZ_op(self, control, target):
         self.psi = np.tensordot(self._CZ_tensor, self.psi, ((2, 3), (control, target)))
         self.psi = np.moveaxis(self.psi, (0,1), (control, target))
         return self
-
+    
+    def CZ_multiqubit(self, control, target_arr):
+        for i in target_arr:
+            self.CZ_op(control, i)
+        return self
 
     def transversal(self, operator):
         i=0
@@ -61,6 +69,8 @@ class Reg:
             self.one_qubit_op(operator, i)
             i+=1
         return self
+    
+    
     def qubit_reset(self, i):
         return None
     #    move = np.moveaxis(self.psi, 0, i)
@@ -71,6 +81,8 @@ class Reg:
         self.psi = np.zeros((2,) *self.n )
         self.psi[(0,) * self.n ] = 1
         return self
+
+
     def project(self, i, j): # RETURN state with ith qubit of reg projected onto |j>
         self.psi = np.moveaxis(np.tensordot(self._projectors[j], self.psi, (1, i)), 0, i)
         return self
