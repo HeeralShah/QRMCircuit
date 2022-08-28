@@ -58,13 +58,22 @@ def testMultiQubitGates():
     reg2 = Reg(4)
     med_reg2 = reg2.one_qubit_op('X_matrix', 0)
     prep = med_reg2.one_qubit_op('X_matrix', 1)
-    prep2 = med_reg2.one_qubit_op('X_matrix', 2)
+    prep2 = prep.one_qubit_op('X_matrix', 2)
 
     final_reg2 = prep2.CZ_multiqubit(0, [1,3])
 
     return final_reg.psi, final_reg2.psi
 
-print(testMultiQubitGates())
+#print(testMultiQubitGates())
+
+def testQubitReset():
+    reg = Reg(3)
+    scramble = reg.one_qubit_op('H_matrix', 2)
+    print(scramble.psi)
+    reset = scramble.qubit_reset(2)
+    print(reset.psi)
+
     
 
-
+    
+testQubitReset()

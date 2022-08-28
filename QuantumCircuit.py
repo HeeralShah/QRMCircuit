@@ -24,18 +24,18 @@ class Reg:
                                                         [0, 0+ 1j]])}
 
         self._CX_matrix = np.array([[1,0,0,0],
-                          [0,1,0,0],
-                          [0,0,0,1],
-                          [0,0,1,0]])
+                                    [0,1,0,0],
+                                    [0,0,0,1],
+                                    [0,0,1,0]])
         self._CZ_matrix = np.array([[1,0,0,0],
-                          [0,1,0,0],
-                          [0,0,1,0],
-                          [0,0,0,-1]])
+                                    [0,1,0,0],
+                                    [0,0,1,0],
+                                    [0,0,0,-1]])
                     
         self._CX_tensor = np.reshape(self._CX_matrix, (2,2,2,2))
         self._CZ_tensor = np.reshape(self._CZ_matrix, (2,2,2,2))
 
-        self._projectors=[np.array([[1,0],[0,0]]), np.array([[0,0],[0,1]])] # list containing the projectors |0><0| and |1><1|
+        self._projectors= [np.array([[1,0],[0,0]]), np.array([[0,0],[0,1]])] # list containing the projectors |0><0| and |1><1|
     
     def one_qubit_op(self, operator, i):
         self.psi = np.tensordot(self._one_qubit_gates[operator], self.psi, (1, i))
@@ -72,7 +72,15 @@ class Reg:
     
     
     def qubit_reset(self, i):
-        return None
+        self = self.measure_qubit(i)
+        #print(self.measure)
+        if self.measure[i] == 1:
+            #print(self.psi)
+            self.psi = np.tensordot(np.array([[0,1], [1,0]]), self.psi, (1, i)) #want to use X operator which will not have noise, even after nosie decorator is added to one_qubit_op
+            self.psi = np.moveaxis(self.psi, 0, i)
+        
+        return self
+
     #    move = np.moveaxis(self.psi, 0, i)
     #    move[(0,) * self.n ] = 1
     #   move[(1, 0,) * (self.n -1 )]
@@ -84,19 +92,28 @@ class Reg:
 
 
     def project(self, i, j): # RETURN state with ith qubit of reg projected onto |j>
-        self.psi = np.moveaxis(np.tensordot(self._projectors[j], self.psi, (1, i)), 0, i)
+        self.psi = np.tensordot(self._projectors[j], self.psi, (1, i))
+        self.psi = np.moveaxis(self.psi, 0, i)
         return self
     
     def measure_qubit(self, i):
-        projected = self.project(i, 0)
-        norm_projected = norm(projected.psi.flatten())
-        if np.random.random() < norm_projected ** 2:
-            self.psi = projected.psi / norm_projected
+        trial_zero_proj = Reg(self.n)
+        trial_one_proj  = Reg(self.n)
+
+        trial_zero_proj.psi = self.psi
+        trial_one_proj.psi = self.psi
+
+        projected_zero = trial_zero_proj.project(i, 0)
+        norm_projected_zero = norm(projected_zero.psi.flatten())
+        random = np.random.random()
+        
+        if random < norm_projected_zero ** 2:
+            self.psi = projected_zero.psi / norm_projected_zero
             self.measure[i] = 0
         else:
-            projected = self.project(i, 0)
-            norm_projected = norm(projected.psi.flatten())
-            self.psi = projected.psi / norm_projected
+            projected_one = trial_one_proj.project(i, 1)
+            norm_projected_one = norm(projected_one.psi.flatten())
+            self.psi = projected_one.psi / norm_projected_one
             self.measure[i] = 1
         
         return self
