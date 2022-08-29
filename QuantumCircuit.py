@@ -1,6 +1,10 @@
 from http.client import PRECONDITION_FAILED
 import numpy as np
 from scipy.linalg import norm
+from abc import ABC, abstractmethod
+
+#class NoisyChannel(ABC):
+
 
                     
 class Reg:
@@ -73,18 +77,12 @@ class Reg:
     
     def qubit_reset(self, i):
         self = self.measure_qubit(i)
-        #print(self.measure)
         if self.measure[i] == 1:
-            #print(self.psi)
             self.psi = np.tensordot(np.array([[0,1], [1,0]]), self.psi, (1, i)) #want to use X operator which will not have noise, even after nosie decorator is added to one_qubit_op
             self.psi = np.moveaxis(self.psi, 0, i)
         
         return self
 
-    #    move = np.moveaxis(self.psi, 0, i)
-    #    move[(0,) * self.n ] = 1
-    #   move[(1, 0,) * (self.n -1 )]
-    
     def reg_reset(self):
         self.psi = np.zeros((2,) *self.n )
         self.psi[(0,) * self.n ] = 1
@@ -120,5 +118,3 @@ class Reg:
 
 
 
-
-##################################  TESTING   #########################################

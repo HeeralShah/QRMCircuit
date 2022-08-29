@@ -14,8 +14,8 @@ def basicTest():
 def equalProbs():
     counter = 0
     i=0
-    while i < 100:
-        reg = Reg(4)
+    while i < 1000000:
+        reg = Reg(8)
         #print(reg.measure)
         #print(reg.psi)
         #final_reg = reg.transversal(reg.H)
