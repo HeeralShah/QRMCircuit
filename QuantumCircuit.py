@@ -82,9 +82,9 @@ class Reg:
 
         self._projectors= [np.array([[1,0],[0,0]]), np.array([[0,0],[0,1]])] # list containing the projectors |0><0| and |1><1|
 
-        self.err_model = DepolarizingNoise(0.01)
+        self.err_model = DepolarizingNoise(0.5)
     
-    @DepolarizingNoise(0.01).one_qubit_noise
+    @DepolarizingNoise.one_qubit_noise
     def one_qubit_op(self, operator, i):
         self.psi = np.tensordot(self._one_qubit_gates[operator], self.psi, (1, i))
         self.psi = np.moveaxis(self.psi, 0, i)
