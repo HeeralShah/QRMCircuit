@@ -79,11 +79,22 @@ def testQubitReset():
 #testQubitReset()
 
 def testOneQubitDecorator():
-    reg = Reg(4)
-    reg.one_qubit_op('H_matrix', 2)
-    reg.one_qubit_op('H_matrix', 3)
-    print(reg.psi)
-    reg.measure_all()
-    print(reg.measure)
+    i=0
+    arr_list = []
+    counter = [0]
+    while i < 100:
+        reg = Reg(4)
+        reg.one_qubit_op('H_matrix', 2)
+        #reg.one_qubit_op('H_matrix', 3)
+        #print(reg.psi)
+        reg.measure_all()
+        arr = reg.psi
+        if arr.flatten not in arr_list:
+            arr_list.append(arr.flatten)
+            counter.append(0)
+        counter[arr_list.index(arr.flatten)] +=1
+        i+=1
+    return counter
+    
 
-testOneQubitDecorator()
+print(testOneQubitDecorator())
