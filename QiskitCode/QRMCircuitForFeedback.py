@@ -1,3 +1,4 @@
+from cmath import sqrt
 from qiskit import *
 from openpyxl import Workbook, load_workbook
 
@@ -16,17 +17,17 @@ from qiskit.circuit.exceptions import CircuitError
 #noise packages
 import qiskit.providers.aer.noise as noise
 
-#time package to estimate computation size
+#time package to estimate computation sizes
 from datetime import datetime
 
 
-#setting self-controlled constant values
-PARAM = 0.001
-RUNS = 10000
+#setting self-controlled constant value
+PARAM = 0.032
+RUNS = 100000
 PRE_CORRECT = True
 POST_CORRECT = True
-SYND_REP = True
-ERR_CORR_NOISE = True
+SYND_REP = False
+ERR_CORR_NOISE = False
 
 #for checking syndrome pair 2 only
 chk_synd2 = False
@@ -63,6 +64,20 @@ cz_noisy = CZGate(label="cz_noise")
 
 h_noisy = HGate(label="h_noise")
 
+x_unitary = UnitaryGate([[0,1],[1,0]])
+z_unitary = UnitaryGate([[1,0],[0,-1]])
+
+cx_unitary = UnitaryGate([[1,0,0,0]
+                          [0,1,0,0],
+                          [0,0,0,1]
+                          [0,0,1,0]])
+
+cz_unitary = UnitaryGate([[1,0,0,0]
+                          [0,1,0,0],
+                          [0,0,1,0]
+                          [0,0,0,-1]])
+
+h_unitary = UnitaryGate((1/np.sqrt(2)) * [[1,1],[1,-1]])
 
 ###########################INITIALIZE BIT AND QUBIT REGISTERS############################################
 
