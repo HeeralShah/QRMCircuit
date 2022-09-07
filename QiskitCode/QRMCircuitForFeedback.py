@@ -22,12 +22,12 @@ from datetime import datetime
 
 
 #setting self-controlled constant value
-PARAM = 0.032
-RUNS = 100000
-PRE_CORRECT = True
+PARAM = 0.0002
+RUNS = 8000
+PRE_CORRECT = False
 POST_CORRECT = True
 SYND_REP = False
-ERR_CORR_NOISE = False
+ERR_CORR_NOISE = True
 
 #for checking syndrome pair 2 only
 chk_synd2 = False
@@ -42,43 +42,42 @@ one_counter = 0
 
 noiseless_meas = Measure()
 
-x_gate = XGate()
-z_gate = ZGate()
+x_gate = XGate(label='x_reg')
+z_gate = ZGate(label='z_reg')
 
 
-cx_gate = CXGate()
-cz_gate = CZGate()
+cx_gate = CXGate(label='cx_reg')
+cz_gate = CZGate(label='cz_reg')
 
-h_gate = HGate()
+h_gate = HGate(label='h_reg')
 
 #custom gates which will have noise added
 
 noisy_meas = Measure()
 
-x_noisy = XGate(label="x_noisy")
-z_noisy = ZGate(label="z_noisy")
+x_noisy = XGate(label='x_noisy')
+z_noisy = ZGate(label='z_noisy')
 
 
-cx_noisy = CXGate(label="cx_noise")
-cz_noisy = CZGate(label="cz_noise")
+cx_noisy = CXGate(label='cx_noise')
+cz_noisy = CZGate(label='cz_noise')
 
-h_noisy = HGate(label="h_noise")
+h_noisy = HGate(label='h_noise')
 
-x_unitary = UnitaryGate([[0,1],[1,0]])
-z_unitary = UnitaryGate([[1,0],[0,-1]])
+x_unitary = UnitaryGate([[0,1],[1,0]], label='x_unitary')
+z_unitary = UnitaryGate([[1,0],[0,-1]], label='z_unitary')
 
-cx_unitary = UnitaryGate([[1,0,0,0]
+cx_unitary = UnitaryGate([[1,0,0,0],
                           [0,1,0,0],
-                          [0,0,0,1]
-                          [0,0,1,0]])
+                          [0,0,0,1],
+                          [0,0,1,0]], label='cx_unitary')
 
-cz_unitary = UnitaryGate([[1,0,0,0]
+cz_unitary = UnitaryGate([[1,0,0,0],
                           [0,1,0,0],
-                          [0,0,1,0]
-                          [0,0,0,-1]])
+                          [0,0,1,0],
+                          [0,0,0,-1]], label='cz_unitary')
 
-h_unitary = UnitaryGate((1/np.sqrt(2)) * [[1,1],[1,-1]])
-
+h_unitary = UnitaryGate((1/np.sqrt(2)) * np.array([[1,1],[1,-1]]), label='h_unitary')
 
 ###########################INITIALIZE BIT AND QUBIT REGISTERS############################################
 
@@ -143,7 +142,8 @@ def qrm_encoding():
     plus_states = [0,1,2,3,7]
 
     for i in plus_states:
-        circuit.append(h_gate, [main[i]])
+        #circuit.append(h_gate, [main[i]])
+        circuit.h(main[i])
   
     
     #encoding state with QRM
@@ -155,8 +155,8 @@ def qrm_encoding():
         circuit.barrier()
         j=0
         while j < len(ctrl_qb[i]):
-            circuit.append(cx_gate, [ctrl_qb[i][j], targ_qb[i][j]])
-            #circuit.cx(ctrl_qb[i][j],targ_qb[i][j])
+            #circuit.append(cx_gate, [ctrl_qb[i][j], targ_qb[i][j]])
+            circuit.cx(ctrl_qb[i][j],targ_qb[i][j])
             j+=1
         i+=1
 
@@ -179,14 +179,15 @@ def measure_decode():
     while i > -1:
         j=len(ctrl_qb[i])-1
         while j > -1:
-            circuit.append(cx_gate, [ctrl_qb[i][j], targ_qb[i][j]])
-            #circuit.cx(ctrl_qb[i][j],targ_qb[i][j])
+            #circuit.append(cx_gate, [ctrl_qb[i][j], targ_qb[i][j]])
+            circuit.cx(ctrl_qb[i][j],targ_qb[i][j])
             j-=1
         circuit.barrier()
         i-=1
         
         
-    circuit.append(h_gate, [0])
+    #circuit.append(h_gate, [0])
+    circuit.h(0)
     circuit.append(noiseless_meas, [main[0]], [final[0]])
     
     for i in range (0,8):
@@ -228,6 +229,7 @@ def build_syndrome(generators, err_type):
 
     for i in range (0, measurements * 2):
         qc.append(h_noisy, [qr[i]])
+        #qc.h(qr[i])
     
 
     if err_type == "x_err":
@@ -235,20 +237,24 @@ def build_syndrome(generators, err_type):
            for x in generators[i]:
                qc.append(cz_noisy, [qr[i], main[x]])
                qc.append(cz_noisy, [qr[i + measurements], main[x]])
+               #qc.cz(qr[i], main[x])
+               #qc.cz(qr[i + measurements], main[x])
     elif err_type == "z_err":
         for i in range(0, measurements):
             for x in generators[i]:
                 qc.append(cx_noisy, [qr[i], main[x]])
+                #qc.cx(qr[i], main[x])
                 qc.append(cx_noisy, [qr[i + measurements], main[x]])
+                #qc.cx(qr[i + measurements], main[x])
        
     for i in range (0, measurements * 2):
         qc.append(h_noisy, [qr[i]])
+        #qc.h(qr[i])
     
     gate = qc.to_instruction()
     return gate
 
-
-### performing error correction
+## performing error correction
 
 def apply_fix(generators, error_type, check, meas):
 
@@ -257,7 +263,8 @@ def apply_fix(generators, error_type, check, meas):
     
     circuit.append(build_syndrome(generators, error_type), main[:] +  qr[:])
     for i in range(0, measurements * 2):
-        circuit.append(noisy_meas, [qr[i]], [cr[i]])
+        circuit.measure([qr[i]], [cr[i]])
+        #circuit.append(noisy_meas, [qr[i]], [cr[i]])
     for i in range(0, measurements * 2):
         circuit.reset(qr[i])
 
@@ -265,14 +272,20 @@ def apply_fix(generators, error_type, check, meas):
     circuit.x(check[0]).c_if(cr,0) #for flipping meas val to one to NOT activate second syndrome
     for i in range(0, register_size):
         if error_type == "x_err":
-            #circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17)
-            circuit.x(main[i]).c_if(cr, (i+1) * 17)
+            #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17) #for flipping meas val to one to NOT activate second syndrome
+            circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17)
+            circuit.x(check[0]).c_if(cr, (i+1) * 17)
+            #circuit.x(main[i]).c_if(cr, (i+1) * 17)
         elif error_type == "z_err":
-            #circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17)
-            circuit.z(main[i]).c_if(cr, (i+1) * 17)
-        #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17) #for flipping meas val to one to NOT activate second syndrome
-        circuit.x(check[0]).c_if(cr, (i+1) * 17)
+            #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17) #for flipping meas val to one to NOT activate second syndrome
+            circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17)
+            circuit.x(check[0]).c_if(cr, (i+1) * 17)
+            #circuit.z(main[i]).c_if(cr, (i+1) * 17)
+        
     
+
+    circuit.append(noiseless_meas, [check[0]], [meas[0]])
+
     #####################################################################
     #for isolating tests of the second syndrome pair
     if chk_synd2 == True:
@@ -281,28 +294,31 @@ def apply_fix(generators, error_type, check, meas):
 
     #####################################################################
     
-    circuit.append(noiseless_meas, [check[0]], [meas[0]])
+    
 
 
     if SYND_REP == True:
-        circuit.append(build_syndrome(generators, error_type), main[:] +  qr[:])
+        circuit.append(build_syndrome(generators, error_type), main[:] +  qr[:]).c_if(meas, 0)
         for i in range(0, measurements * 2):
             circuit.append(noisy_meas, [qr[i]], [cr[i]])
         for i in range(0, measurements * 2):
             circuit.reset(qr[i])
 
 
-#lines with c_if(meas, 0) should only execute if first pair of syndrome measurements are inconsistent
+        #lines with c_if(meas, 0) should only execute if first pair of syndrome measurements are inconsistent
         circuit.x(check[0]).c_if(cr, 0).c_if(meas, 0)
         for i in range(0, register_size):
             if error_type == "x_err":
-                #circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-                circuit.x(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0) 
+                #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+                circuit.x(check[0]).c_if(meas, 0).c_if(cr, (i+1) * 17)
+                circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+                #circuit.x(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0) 
             elif error_type == "z_err":
-                #circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-                circuit.z(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-            #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-            circuit.x(check[0]).c_if(meas, 0).c_if(cr, (i+1) * 17)
+                #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+                circuit.x(check[0]).c_if(meas, 0).c_if(cr, (i+1) * 17)
+                circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+                #circuit.z(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+            
     
     
         circuit.append(noiseless_meas, [check[0]], [meas[0]])
@@ -316,6 +332,8 @@ noise_model = noise.NoiseModel()
 depol_param = PARAM
 error1 = noise.depolarizing_error(depol_param, 1)
 error2 = noise.depolarizing_error(depol_param, 2)
+no_err1 = noise.depolarizing_error(0, 1)
+no_err2 = noise.depolarizing_error(0, 2)
 phase_flip = noise.pauli_error([('Z', PARAM), ('I', 1 - PARAM)])
 
 noise_model.add_all_qubit_quantum_error(error1, ['sdg'])
@@ -324,10 +342,16 @@ noise_model.add_all_qubit_quantum_error(error1, ['sdg'])
 #noise_model.add_quantum_error(phase_flip, ["sdg"], [9])
 
 if ERR_CORR_NOISE == True:
-    noise_model.add_all_qubit_quantum_error(error1, [x_noisy.label, z_noisy.label, h_noisy.label])
-    noise_model.add_all_qubit_quantum_error(error2, [cx_noisy.label, cz_noisy.label])
+    noise_model.add_all_qubit_quantum_error(error1,  [x_noisy.label, z_noisy.label, h_noisy.label])
+    noise_model.add_all_qubit_quantum_error(error2,  [cx_noisy.label, cz_noisy.label])
+    #noise_model.add_all_qubit_quantum_error(no_err1, [x_gate.label, z_gate.label, h_gate.label])
+    #noise_model.add_all_qubit_quantum_error(no_err2, [cx_gate.label, cz_gate.label])
+    noise_model.add_all_qubit_quantum_error(no_err1, ['x', 'z', 'h'])
+    noise_model.add_all_qubit_quantum_error(no_err2, ['cx', 'cz'])
+    #noise_model.add_all_qubit_quantum_error(error1, [x_unitary.label, z_unitary.label, h_unitary.label])
+    #noise_model.add_all_qubit_quantum_error(error2, [cx_unitary.label, cz_unitary.label])
 
-noise_model.add_basis_gates(['sdg', "x", "z", "cx", "cz", "h", 'measure'])
+noise_model.add_basis_gates(['sdg', 'x', 'z', 'h', 'cx', 'cz'])
 
 
 
