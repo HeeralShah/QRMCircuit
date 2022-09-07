@@ -1,10 +1,51 @@
 from http.client import PRECONDITION_FAILED
+from sqlite3 import paramstyle
 import numpy as np
 from scipy.linalg import norm
 from abc import ABC, abstractmethod
 
-#class NoisyChannel(ABC):
+class NoisyChannel(ABC):
 
+    @abstractmethod
+    def __init__(self, *args):
+        pass
+
+    @abstractmethod
+    def one_qubit_noise(self, *args):
+        pass
+
+    @abstractmethod
+    def multi_qubit_noise(self,  *args):
+        pass
+
+
+class DepolarizingNoise(NoisyChannel):
+
+    def __init__(self, param):
+
+        self.depol_param = param
+
+        self.pauli_matrices = {0: np.array([[1,0], [0,1]]),
+                               1: np.array([[0,1], [1,0]]),
+                               2: np.array([[0,-1j], [1j,0]]),
+                               3: np.array([[1,0], [0,-1]])}
+
+        
+    @staticmethod
+    def one_qubit_noise(one_qubit_op):
+        def wrapper_one_qubit_noise(cls, *args):
+            param = cls.err_model.depol_param
+            prob = np.random.random()
+            if prob > param:
+                one_qubit_op(cls, *args)
+            else:
+                num = np.random.randint(1, 4)
+                cls.psi = np.tensordot(cls.err_model.pauli_matrices[num], cls.psi, (1, args[1]))
+                one_qubit_op(cls, *args)
+        return wrapper_one_qubit_noise
+
+    def multi_qubit_noise(self, reg, *args):
+        return super().multi_qubit_noise(reg, *args)
 
                     
 class Reg:
@@ -40,7 +81,10 @@ class Reg:
         self._CZ_tensor = np.reshape(self._CZ_matrix, (2,2,2,2))
 
         self._projectors= [np.array([[1,0],[0,0]]), np.array([[0,0],[0,1]])] # list containing the projectors |0><0| and |1><1|
+
+        self.err_model = DepolarizingNoise(0.01)
     
+    @DepolarizingNoise(0.01).one_qubit_noise
     def one_qubit_op(self, operator, i):
         self.psi = np.tensordot(self._one_qubit_gates[operator], self.psi, (1, i))
         self.psi = np.moveaxis(self.psi, 0, i)
@@ -113,6 +157,12 @@ class Reg:
             norm_projected_one = norm(projected_one.psi.flatten())
             self.psi = projected_one.psi / norm_projected_one
             self.measure[i] = 1
+        
+        return self
+
+    def measure_all(self):
+        for i in range(self.n):
+            self.measure_qubit(i)
         
         return self
 

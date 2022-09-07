@@ -32,7 +32,7 @@ def equalProbs():
 
     return counter
         
-print(equalProbs())
+#print(equalProbs())
 
 
 #print(testEqualProb())
@@ -76,4 +76,14 @@ def testQubitReset():
     
 
     
-testQubitReset()
+#testQubitReset()
+
+def testOneQubitDecorator():
+    reg = Reg(4)
+    reg.one_qubit_op('H_matrix', 2)
+    reg.one_qubit_op('H_matrix', 3)
+    print(reg.psi)
+    reg.measure_all()
+    print(reg.measure)
+
+testOneQubitDecorator()
