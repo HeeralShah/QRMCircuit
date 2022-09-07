@@ -22,8 +22,8 @@ from datetime import datetime
 
 
 #setting self-controlled constant value
-PARAM = 0.00002
-RUNS = 100000
+PARAM = 0.0002
+RUNS = 8000
 PRE_CORRECT = False
 POST_CORRECT = True
 SYND_REP = False
@@ -298,7 +298,7 @@ def apply_fix(generators, error_type, check, meas):
 
 
     if SYND_REP == True:
-        circuit.append(build_syndrome(generators, error_type), main[:] +  qr[:])
+        circuit.append(build_syndrome(generators, error_type), main[:] +  qr[:]).c_if(meas, 0)
         for i in range(0, measurements * 2):
             circuit.append(noisy_meas, [qr[i]], [cr[i]])
         for i in range(0, measurements * 2):
@@ -309,13 +309,16 @@ def apply_fix(generators, error_type, check, meas):
         circuit.x(check[0]).c_if(cr, 0).c_if(meas, 0)
         for i in range(0, register_size):
             if error_type == "x_err":
-                #circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-                circuit.x(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0) 
+                #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+                circuit.x(check[0]).c_if(meas, 0).c_if(cr, (i+1) * 17)
+                circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+                #circuit.x(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0) 
             elif error_type == "z_err":
-                #circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-                circuit.z(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-            #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-            circuit.x(check[0]).c_if(meas, 0).c_if(cr, (i+1) * 17)
+                #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+                circuit.x(check[0]).c_if(meas, 0).c_if(cr, (i+1) * 17)
+                circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+                #circuit.z(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0)
+            
     
     
         circuit.append(noiseless_meas, [check[0]], [meas[0]])
@@ -348,7 +351,7 @@ if ERR_CORR_NOISE == True:
     #noise_model.add_all_qubit_quantum_error(error1, [x_unitary.label, z_unitary.label, h_unitary.label])
     #noise_model.add_all_qubit_quantum_error(error2, [cx_unitary.label, cz_unitary.label])
 
-noise_model.add_basis_gates(['sdg', 'unitary', 'x', 'z', 'h', 'cx', 'cz'])
+noise_model.add_basis_gates(['sdg', 'x', 'z', 'h', 'cx', 'cz'])
 
 
 
