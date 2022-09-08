@@ -142,7 +142,6 @@ def qrm_encoding():
     plus_states = [0,1,2,3,7]
 
     for i in plus_states:
-        #circuit.append(h_gate, [main[i]])
         circuit.h(main[i])
   
     
@@ -155,7 +154,6 @@ def qrm_encoding():
         circuit.barrier()
         j=0
         while j < len(ctrl_qb[i]):
-            #circuit.append(cx_gate, [ctrl_qb[i][j], targ_qb[i][j]])
             circuit.cx(ctrl_qb[i][j],targ_qb[i][j])
             j+=1
         i+=1
@@ -179,7 +177,6 @@ def measure_decode():
     while i > -1:
         j=len(ctrl_qb[i])-1
         while j > -1:
-            #circuit.append(cx_gate, [ctrl_qb[i][j], targ_qb[i][j]])
             circuit.cx(ctrl_qb[i][j],targ_qb[i][j])
             j-=1
         circuit.barrier()
@@ -229,27 +226,20 @@ def build_syndrome(generators, err_type):
 
     for i in range (0, measurements * 2):
         qc.append(h_noisy, [qr[i]])
-        #qc.h(qr[i])
-    
 
     if err_type == "x_err":
         for i in range(0, measurements):
            for x in generators[i]:
                qc.append(cz_noisy, [qr[i], main[x]])
                qc.append(cz_noisy, [qr[i + measurements], main[x]])
-               #qc.cz(qr[i], main[x])
-               #qc.cz(qr[i + measurements], main[x])
     elif err_type == "z_err":
         for i in range(0, measurements):
             for x in generators[i]:
                 qc.append(cx_noisy, [qr[i], main[x]])
-                #qc.cx(qr[i], main[x])
                 qc.append(cx_noisy, [qr[i + measurements], main[x]])
-                #qc.cx(qr[i + measurements], main[x])
        
     for i in range (0, measurements * 2):
         qc.append(h_noisy, [qr[i]])
-        #qc.h(qr[i])
     
     gate = qc.to_instruction()
     return gate
@@ -264,23 +254,19 @@ def apply_fix(generators, error_type, check, meas):
     circuit.append(build_syndrome(generators, error_type), main[:] +  qr[:])
     for i in range(0, measurements * 2):
         circuit.measure([qr[i]], [cr[i]])
-        #circuit.append(noisy_meas, [qr[i]], [cr[i]])
     for i in range(0, measurements * 2):
         circuit.reset(qr[i])
 
-    #circuit.append(x_gate, [check[0]]).c_if(cr, 0) 
     circuit.x(check[0]).c_if(cr,0) #for flipping meas val to one to NOT activate second syndrome
     for i in range(0, register_size):
         if error_type == "x_err":
-            #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17) #for flipping meas val to one to NOT activate second syndrome
-            circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17)
-            circuit.x(check[0]).c_if(cr, (i+1) * 17)
             #circuit.x(main[i]).c_if(cr, (i+1) * 17)
+            circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17)
+            circuit.x(check[0]).c_if(cr, (i+1) * 17)  #for flipping meas val to one to NOT activate second syndrome
         elif error_type == "z_err":
-            #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17) #for flipping meas val to one to NOT activate second syndrome
-            circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17)
-            circuit.x(check[0]).c_if(cr, (i+1) * 17)
             #circuit.z(main[i]).c_if(cr, (i+1) * 17)
+            circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17) 
+            circuit.x(check[0]).c_if(cr, (i+1) * 17) #for flipping meas val to one to NOT activate second syndrome
         
     
 
@@ -309,17 +295,13 @@ def apply_fix(generators, error_type, check, meas):
         circuit.x(check[0]).c_if(cr, 0).c_if(meas, 0)
         for i in range(0, register_size):
             if error_type == "x_err":
-                #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
                 circuit.x(check[0]).c_if(meas, 0).c_if(cr, (i+1) * 17)
                 circuit.append(x_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
                 #circuit.x(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0) 
             elif error_type == "z_err":
-                #circuit.append(x_gate, [check[0]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
                 circuit.x(check[0]).c_if(meas, 0).c_if(cr, (i+1) * 17)
                 circuit.append(z_noisy, [main[i]]).c_if(cr, (i+1) * 17).c_if(meas, 0)
                 #circuit.z(main[i]).c_if(cr, (i+1) * 17).c_if(meas, 0)
-            
-    
     
         circuit.append(noiseless_meas, [check[0]], [meas[0]])
 
@@ -334,22 +316,15 @@ error1 = noise.depolarizing_error(depol_param, 1)
 error2 = noise.depolarizing_error(depol_param, 2)
 no_err1 = noise.depolarizing_error(0, 1)
 no_err2 = noise.depolarizing_error(0, 2)
-phase_flip = noise.pauli_error([('Z', PARAM), ('I', 1 - PARAM)])
 
 noise_model.add_all_qubit_quantum_error(error1, ['sdg'])
 
-#noise_model.add_quantum_error(phase_flip, ["sdg"], [10])
-#noise_model.add_quantum_error(phase_flip, ["sdg"], [9])
 
 if ERR_CORR_NOISE == True:
     noise_model.add_all_qubit_quantum_error(error1,  [x_noisy.label, z_noisy.label, h_noisy.label])
     noise_model.add_all_qubit_quantum_error(error2,  [cx_noisy.label, cz_noisy.label])
-    #noise_model.add_all_qubit_quantum_error(no_err1, [x_gate.label, z_gate.label, h_gate.label])
-    #noise_model.add_all_qubit_quantum_error(no_err2, [cx_gate.label, cz_gate.label])
     noise_model.add_all_qubit_quantum_error(no_err1, ['x', 'z', 'h'])
     noise_model.add_all_qubit_quantum_error(no_err2, ['cx', 'cz'])
-    #noise_model.add_all_qubit_quantum_error(error1, [x_unitary.label, z_unitary.label, h_unitary.label])
-    #noise_model.add_all_qubit_quantum_error(error2, [cx_unitary.label, cz_unitary.label])
 
 noise_model.add_basis_gates(['sdg', 'x', 'z', 'h', 'cx', 'cz'])
 
